@@ -1,0 +1,46 @@
+#########################################
+#
+# OS: CentOS-7-X86_64-DVD-1810
+# Description: un-install OpenJdk and install SunJdk
+#
+#########################################
+
+# Account: hadoop
+cd /home/hadoop/Downloads
+tar -xzvf jdk-8u202-linux-x64.tar.gz
+
+# Account: root
+
+rpm -qa | grep jdk
+rpm -qa | grep java
+rpm -e --nodeps copy-jdk-configs-3.3-10.el7_5.noarch
+rpm -e --nodeps java-1.7.0-openjdk-headless-1.7.0.191-2.6.15.5.el7.x86_64
+rpm -e --nodeps java-1.7.0-openjdk-1.7.0.191-2.6.15.5.el7.x86_64
+rpm -e --nodeps java-1.8.0-openjdk-1.8.0.181-7.b13.el7.x86_64
+rpm -e --nodeps java-1.8.0-openjdk-headless-1.8.0.181-7.b13.el7.x86_64
+rpm -e --nodeps tzdata-java-2018e-3.el7.noarch
+rpm -e --nodeps javassist-3.16.1-10.el7.noarch
+rpm -e --nodeps javapackages-tools-3.4.1-11.el7.noarch
+rpm -e --nodeps javamail-1.4.6-8.el7.noarch
+rpm -e --nodeps python-javapackages-3.4.1-11.el7.noarch
+
+mkdir /usr/java
+cd /usr/java
+mv /home/hadoop/Downloads/jdk1.8.0_202 ./
+chown -R root jdk1.8.0_202
+chmod -R 755 /usr/java/
+ln -svnf jdk1.8.0_202 current
+
+touch /etc/profile.d/java.sh
+vi /etc/profile.d/java.sh
+
+# Add env parameter
+export JAVA_HOME=/usr/java/current
+export CLASSPATH=.:${JAVA_HOME}/jre/lib/rt.jar:${JAVA_HOME}/lib/dt.jar:${JAVA_HOME}/lib/tools.jar
+export PATH=$PATH:$JAVA_HOME/bin
+
+source /etc/profile
+
+# validate
+java -version
+javac -version
