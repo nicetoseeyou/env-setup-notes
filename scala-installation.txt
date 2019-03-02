@@ -1,0 +1,22 @@
+cd /home/hadoop/Downloads
+tar -zxvf scala-2.12.8.tgz
+
+#root
+mkdir -p /usr/scala
+cd /usr/scala
+mv /home/hadoop/Downloads/scala-2.12.8 ./
+chown -R root:root scala-2.12.8
+chmod -R 755 /usr/scala/
+ln -svnf scala-2.12.8 current
+
+touch /etc/profile.d/scala.sh
+vi /etc/profile.d/scala.sh
+
+# Add env parameter
+export SCALA_HOME=/usr/scala/current
+export PATH=$PATH:$SCALA_HOME/bin
+
+source /etc/profile
+
+# validate
+scala -version

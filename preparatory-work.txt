@@ -1,0 +1,106 @@
+##################################
+#
+# Preparatory work
+#
+##################################
+
+# Account: root
+
+mkdir /usr/app
+cd /usr
+chown -R hadoop app
+chgrp -R hadoop app
+
+#disable firewall
+firewall-cmd --state
+service firewalld stop
+systemctl disable firewalld
+firewall-cmd --state
+
+#enable firewall if need
+systemctl enable firewalld
+
+# Account: hadoop
+cd /home/hadoop/Downloads
+unzip apache-maven-3.6.0-bin.zip
+tar -xzvf hadoop-3.1.2.tar.gz 
+tar -xzvf hbase-2.1.3-bin.tar.gz 
+tar -xzvf kafka_2.12-2.1.1.tgz 
+tar -xzvf spark-2.4.0-bin-without-hadoop-scala-2.12.tgz 
+tar -xzvf zookeeper-3.4.13.tar.gz
+
+cd /usr/app
+mkdir hadoop
+mkdir hbase
+mkdir kafka
+mkdir maven
+mkdir spark
+mkdir zookeeper
+
+mv /home/hadoop/Downloads/hadoop-3.1.2 ./hadoop/
+mv /home/hadoop/Downloads/hbase-2.1.3 ./hbase/
+mv /home/hadoop/Downloads/kafka_2.12-2.1.1 ./kafka/
+mv /home/hadoop/Downloads/apache-maven-3.6.0 ./maven/
+mv /home/hadoop/Downloads/spark-2.4.0-bin-without-hadoop-scala-2.12 ./spark/
+mv /home/hadoop/Downloads/zookeeper-3.4.13 ./zookeeper/
+
+cd maven
+ln -svnf apache-maven-3.6.0/ current
+
+cd hadoop
+ln -svnf hadoop-3.1.2 current
+
+cd hbase
+ln -svnf hbase-2.1.3 current
+
+cd kafka
+ln -svnf kafka_2.12-2.1.1 current
+
+cd spark
+ln -svnf spark-2.4.0-bin-without-hadoop-scala-2.12 current
+
+cd zookeeper
+ln -svnf zookeeper-3.4.13 current
+
+
+# Account: root
+vi /etc/hosts
+
+127.0.0.1 localhost
+192.168.197.137 centos-1
+192.168.197.136 centos-2
+192.168.197.135 centos-3
+
+# Account: hadoop, all nodes
+cd ~
+ssh localhost
+cd .ssh
+ssh-keygen -t rsa
+cat id_rsa.pub >> authorized_keys
+
+# in 2, 3
+scp id_rsa.pub hadoop@centos-1:~/.ssh/id_rsa.pub_2
+scp id_rsa.pub hadoop@centos-1:~/.ssh/id_rsa.pub_3
+
+#in 1
+cat id_rsa.pub_2 >> authorized_keys
+cat id_rsa.pub_3 >> authorized_keys
+
+scp authorized_keys hadoop@centos-2:~/.ssh/
+scp authorized_keys hadoop@centos-3:~/.ssh/
+
+
+# edit settings.xml and cp in /home/hadoop/.m2
+
+# Account: root
+touch /etc/profile.d/mvn.sh
+vi /etc/profile.d/mvn.sh
+
+export MAVEN_HOME=/usr/app/maven/current
+export PATH=$PATH:$MAVEN_HOME/bin
+
+source /etc/profile
+
+mvn -v
+
+

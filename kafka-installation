@@ -1,0 +1,52 @@
+##########################################
+#
+#
+#
+##########################################
+
+## Acount root
+vi /etc/profile.d/kafka.sh
+export KAFKA_HOME=/usr/app/kafka/current
+export PATH=$PATH:$KAFKA_HOME/bin
+
+source /etc/profile
+
+## Account hadoop
+mkdir -p /usr/app/kafka/kafka_log
+
+cd /usr/app/kafka/current/config/
+
+vi server.properties
+
+broker.id=1
+host.name=centos-1
+
+log.dirs=/usr/app/kafka/kafka_log
+
+num.partitions=3
+
+zookeeper.connect=centos-1:2181,centos-2:2181,centos-3:2181
+
+# enable to delete topic
+auto.create.topics.enable=true
+delete.topic.enable=true
+
+vi consumer.properties
+bootstrap.servers=centos-1:9092,centos-2:9092,centos-3:9092
+
+bootstrap.servers=centos-1:9092,centos-2:9092,centos-3:9092
+
+
+cd /usr/app/kafka/current/bin
+./kafka-server-start.sh -daemon ../config/server.properties &
+
+./kafka-topics.sh --zookeeper centos-1:2181,centos-2:2181,centos-3:2181 --create --topic test-kafka --replication-factor 3 --partitions 3
+./kafka-topics.sh --zookeeper centos-1:2181,centos-2:2181,centos-3:2181 --list
+./kafka-topics.sh --zookeeper centos-1:2181,centos-2:2181,centos-3:2181 --describe --topic test-kafka
+./kafka-console-producer.sh --broker-list centos-1:9092,centos-2:9092,centos-3:9092 --topic test-kafka
+./kafka-console-consumer.sh --bootstrap-server centos-1:9092,centos-2:9092,centos-3:9092 --topic test-kafka --from-beginning
+./kafka-topics.sh --zookeeper centos-1:2181,centos-2:2181,centos-3:2181 --delete --topic test-kafka
+
+
+transaction.state.log.replication.factor
+transaction.state.log.min.isr

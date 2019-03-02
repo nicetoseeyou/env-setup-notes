@@ -1,0 +1,206 @@
+########################################################
+#
+# Hadoop ihdc01tallation
+# /usr/app/hadoop/current
+#
+########################################################
+
+##root
+vi /etc/profile.d/hadoop.sh
+export HADOOP_HOME=/usr/app/hadoop/current
+export HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop
+export PATH=$PATH:$HADOOP_HOME/bin:$HADOOP_HOME/sbin
+
+source /etc/profile
+
+
+## hadoop
+cd /usr/app/hadoop/current/
+
+vi ./etc/hadoop/core-site.xml
+
+<configuration>
+	<property>
+		<name>fs.defaultFS</name>    
+		<value>hdfs://hdc01</value>    
+	</property>
+	<property>
+		<name>hadoop.tmp.dir</name>
+		<value>/usr/app/hadoop/current/tmp</value>
+	</property>                     
+	<property>    
+		<name>io.file.buffer.size</name>    
+		<value>4096</value>    
+	</property>
+	<property>
+		<name>ha.zookeeper.quorum</name>
+		<value>centos-1:2181,centos-2:2181,centos-3:2181</value>
+	</property>
+</configuration>
+
+vi ./etc/hadoop/hdfs-site.xml
+
+<configuration>
+	<property>
+		<name>dfs.nameservices</name>
+		<value>hdc01</value>
+	</property>
+	<property>
+		<name>dfs.ha.namenodes.hdc01</name>
+		<value>namenode1,namenode2</value>
+	</property>
+	<property>
+		<name>dfs.namenode.rpc-address.hdc01.namenode1</name>
+		<value>centos-1:9000</value>
+	</property>
+	<property>
+		<name>dfs.namenode.rpc-address.hdc01.namenode2</name>
+		<value>centos-2:9000</value>
+	</property>
+	<property>
+		<name>dfs.namenode.http-address.hdc01.namenode1</name>
+		<value>centos-1:50070</value>
+	</property>
+	<property>
+		<name>dfs.namenode.http-address.hdc01.namenode2</name>
+		<value>centos-2:50070</value>
+	</property>
+	<property>
+		<name>dfs.namenode.shared.edits.dir</name>
+		<value>qjournal://centos-1:8485;centos-2:8485;centos-3:8485/hdc01</value>
+	</property>
+	<property>
+		<name>dfs.journalnode.edits.dir</name>
+		<value>/usr/app/hadoop/current/journal</value>
+	</property>
+	<property>
+		<name>dfs.ha.automatic-failover.enabled</name>
+		<value>true</value>
+	</property>
+	<property>
+		<name>dfs.client.failover.proxy.provider.hdc01</name>
+		<value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
+	</property>
+	<property>
+		<name>dfs.ha.fencing.methods</name>
+		<value>sshfence</value>
+	</property>
+	<property>
+		<name>dfs.ha.fencing.ssh.private-key-files</name>
+		<value>/home/hadoop/.ssh/id_rsa</value>
+	</property>
+	<property>
+		<name>dfs.namenode.name.dir</name>
+		<value>file:///usr/app/hadoop/current/hdfs/name</value>
+	</property>
+	<property>
+		<name>dfs.datanode.data.dir</name>
+		<value>file:///usr/app/hadoop/current/hdfs/data</value>
+	</property>
+	<property>
+		<name>dfs.replication</name>
+		<value>3</value>
+	</property>
+	<property>
+		<name>dfs.webhdfs.enabled</name>
+		<value>true</value>
+	</property>
+</configuration>
+
+dos2unix ./etc/hadoop/hdfs-site.xml
+
+vi ./etc/hadoop/mapred-site.xml
+
+<configuration>
+	<property>
+		<name>mapreduce.framework.name</name>
+		<value>yarn</value>
+	</property>
+</configuration>
+
+dos2unix ./etc/hadoop/mapred-site.xml
+
+vi ./etc/hadoop/yarn-site.xml
+
+<configuration>
+	<property>
+		<name>yarn.nodemanager.aux-services</name>
+		<value>mapreduce_shuffle</value>
+	</property>
+	<property>
+		<name>yarn.resourcemanager.hostname</name>
+		<value>centos-3</value>
+	</property>
+</configuration>
+
+dos2unix ./etc/hadoop/yarn-site.xml
+
+mkdir -p /usr/app/hadoop/current/journal
+mkdir -p /usr/app/hadoop/current/hdfs/name
+mkdir -p /usr/app/hadoop/current/hdfs/data
+
+vi ./etc/hadoop/hadoop-env.sh
+
+export JAVA_HOME=/usr/java/current
+
+vi ./etc/hadoop/workers
+
+centos-1
+centos-2
+centos-3
+
+dos2unix ./etc/hadoop/workers
+
+#############################################
+#
+# Start Hadoop
+#
+#############################################
+
+## start zookeeper cluster, centos-1,centos-2,centos-3
+cd /usr/app/zookeeper/current/
+./bin/zkServer.sh start
+./bin/zkServer.sh status
+
+## start journalnode, centos-1,centos-2,centos-3
+#cd /usr/app/hadoop/current/sbin
+#hadoop-daemons.sh start journalnode
+hdfs --daemon start journalnode
+
+## format zkfc, centos-1
+hdfs zkfc -formatZK
+
+## format NameNode centos-1
+hdfs namenode -format
+
+## start NameNode, centos-1
+hdfs --daemon start namenode
+
+## Sync NameNode centos-1 to NameNode centos-2, run on centos-2
+hdfs namenode -bootstrapStandby
+
+--------------
+
+##another version by https://www.cnblogs.com/qingyunzong/p/8634335.html
+# start hdfs
+start-dfs.sh
+start-yarn.sh
+
+
+--------------
+
+## start NameNode centos-2, run on centos-2
+hdfs --daemon start namenode
+
+## start datanode centos-1,centos-2,centos-3
+hdfs --daemon start datanode
+
+## start yarn on centos-3
+cd /usr/app/hadoop/current/sbin
+./start-yarn.sh
+
+## start zkfc on NameNode, centos-1,centos-2
+hdfs --daemon start zkfc
+
+
+

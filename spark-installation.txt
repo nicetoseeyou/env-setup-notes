@@ -1,0 +1,35 @@
+touch /etc/profile.d/spark.sh
+vi /etc/profile.d/spark.sh
+
+export SPARK_HOME=/usr/app/spark/current
+export PATH=$PATH:$SPARK_HOME/bin:$SPARK_HOME/sbin
+
+source /etc/profile
+
+
+cd /usr/app/spark/current/conf
+cp spark-env.sh.template spark-env.sh
+
+vi spark-env.sh
+
+export SPARK_DIST_CLASSPATH=$(hadoop classpath)
+export SPARK_WORKER_MEMORY=512m
+export SPARK_WORKER_CORES=1
+export SPARK_WORKER_INSTANCES=1
+export SPARK_DAEMON_JAVA_OPTS="-Dspark.deploy.recoveryMode=ZOOKEEPER -Dspark.deploy.zookeeper.url=centos-1:2181,centos-2:2181,centos-3:2181 -Dspark.deploy.zookeeper.dir=/spark"
+
+
+cp slaves.template slaves
+vi slaves
+
+centos-1
+centos-2
+centos-3
+
+## start spark on master: centos-1
+cd /usr/app/spark/current/sbin
+start-all.sh
+
+## start standby master on centos-2
+cd /usr/app/spark/current/sbin
+start-master.sh

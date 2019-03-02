@@ -1,0 +1,51 @@
+#####################
+#
+# Zookeeper installation
+#
+#####################
+
+## root
+sudo su - root
+vi /etc/profile.d/zookeeper.sh
+
+export ZOOKEEPER_HOME=/usr/app/zookeeper/current
+export PATH=$PATH:$ZOOKEEPER_HOME/bin
+
+source /etc/profile
+
+## hadoop
+cd /usr/app/zookeeper/current/conf/
+cp zoo_sample.cfg zoo.cfg
+
+vi zoo.cfg
+
+dataDir=/usr/app/zookeeper/current/data
+dataLogDir=/usr/app/zookeeper/current/datalog
+
+server.1=centos-1:2888:3888
+server.2=centos-2:2888:3888
+server.3=centos-3:2888:3888
+
+#
+mkdir -p /usr/app/zookeeper/current/data
+mkdir -p /usr/app/zookeeper/current/datalog
+
+cd /usr/app/zookeeper/current/data
+#centos-1: 
+echo 1 > myid
+#centos-2: 
+echo 2 > myid
+#centos-3: 
+echo 3 > myid
+
+chmod -R 775 /usr/app/
+cd /usr/app/zookeeper/current
+./bin/zkServer.sh start
+./bin/zkServer.sh status
+./bin/zkServer.sh stop
+
+/usr/app/zookeeper/current/bin/zkServer.sh start
+/usr/app/zookeeper/current/bin/zkServer.sh status
+/usr/app/zookeeper/current/bin/zkServer.sh stop
+
+
